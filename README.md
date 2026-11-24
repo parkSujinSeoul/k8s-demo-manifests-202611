@@ -50,9 +50,17 @@ curl http://10.255.27.230:30080/api/info
 
 # 3.2 Istio (ingressgateway NodePort 확인)
 GW_PORT=$(kubectl -n istio-system get svc istio-ingressgateway -o jsonpath='{.spec.ports[?(@.name=="http2")].nodePort}')
-curl -H "Host: app.lab02.local" http://10.255.27.230:$GW_PORT/api/info          # → v1
-curl -H "Host: app.lab02.local" http://10.255.27.230:$GW_PORT/v2/api/info       # → v2
-curl -H "Host: app.lab02.local" -H "x-version: v2" http://10.255.27.230:$GW_PORT/api/info   # → v2
+GW=http://10.255.27.230:$GW_PORT
+H="Host: app.lab02.local"
+curl -s -H "$H" $GW/v1/api/info                      # 경로별 → 항상 v1
+curl -s -H "$H" $GW/v2/api/info                      # 경로별 → 항상 v2
+curl -s -H "$H" -H "x-version: v2" $GW/api/info      # 헤더 → 항상 v2
+
+# 가중치(카나리): / 는 v1 80% : v2 20% → 100번 호출해서 개수 세기
+for i in $(seq 100); do curl -s -H "$H" $GW/api/info | grep -o '"version":"v[12]"'; done | sort | uniq -c
+
+# 비교: NodePort는 Istio를 거치지 않아 Pod 개수 비율(v1 2개 : v2 1개)대로 분산
+for i in $(seq 100); do curl -s http://10.255.27.230:30080/api/info | grep -o '"version":"v[12]"'; done | sort | uniq -c
 
 # 3.3 DNS (bastion dnsmasq: address=/lab02.local/10.255.27.230)
 nslookup app.lab02.local
@@ -61,7 +69,14 @@ curl http://app.lab02.local:$GW_PORT/api/info
 kubectl run dnstest --rm -it --image=busybox:1.36 -n demo -- nslookup demo-app.demo.svc.cluster.local
 ```
 
-NodePort(30080)는 v1, v2 Pod에 고르게 분산되고, Istio 경로는 VirtualService 규칙대로 나뉩니다. 두 결과를 비교하면 Istio 라우팅 효과를 보여줄 수 있습니다.
+| 요청 | 응답 버전 |
+|---|---|
+| `/v1/...` | 항상 v1 |
+| `/v2/...` 또는 헤더 `x-version: v2` | 항상 v2 |
+| `/` | v1 약 80% : v2 약 20% (VirtualService 가중치) |
+| NodePort 30080 | v1 약 2/3 : v2 약 1/3 (Pod 개수 비율, Istio 미경유) |
+
+Istio를 거치면 설정한 비율대로, NodePort로 직접 가면 Pod 개수대로 나뉩니다. 이 차이로 Istio가 트래픽을 제어한다는 것을 보여 줄 수 있습니다. 비율을 바꿀 때는 `kubectl edit`이 아니라 Git에 커밋합니다(ArgoCD selfHeal이 수동 변경을 되돌림).
 
 ## 자동 배포
 
