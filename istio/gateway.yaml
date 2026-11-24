@@ -1,0 +1,17 @@
+# 과제 3.2: istio-ingressgateway(NodePort)로 들어온 요청 중 아래 호스트만 받는다.
+# 과제 3.3: bastion dnsmasq가 app.lab02.local → worker-02(10.255.27.230)로 응답
+apiVersion: networking.istio.io/v1
+kind: Gateway
+metadata:
+  name: demo-gateway
+  namespace: demo
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+    - port:
+        number: 80
+        name: http
+        protocol: HTTP
+      hosts:
+        - app.lab02.local

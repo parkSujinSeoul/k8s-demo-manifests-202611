@@ -1,0 +1,85 @@
+# 같은 이미지로 v1 / v2 두 Deployment를 띄운다.
+# - 차이는 APP_VERSION 환경변수와 version 라벨뿐 → Istio DestinationRule subset으로 구분
+# - Jenkins가 아래 두 컨테이너 이미지의 태그를 함께 갱신한다 (Jenkinsfile의 Update Manifest 단계)
+# TODO: YOUR_DOCKERHUB_ID 를 본인 Docker Hub 아이디로 변경 (최초 1회)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app-v1
+  namespace: demo
+  labels:
+    app: demo-app
+    version: v1
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: demo-app
+      version: v1
+  template:
+    metadata:
+      labels:
+        app: demo-app
+        version: v1
+    spec:
+      containers:
+        - name: demo-app
+          image: docker.io/YOUR_DOCKERHUB_ID/k8s-demo-app:v1
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_VERSION
+              value: v1
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 128Mi }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: demo-app-v2
+  namespace: demo
+  labels:
+    app: demo-app
+    version: v2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: demo-app
+      version: v2
+  template:
+    metadata:
+      labels:
+        app: demo-app
+        version: v2
+    spec:
+      containers:
+        - name: demo-app
+          image: docker.io/YOUR_DOCKERHUB_ID/k8s-demo-app:v1
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            - name: APP_VERSION
+              value: v2
+          readinessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 3
+            periodSeconds: 5
+          livenessProbe:
+            httpGet: { path: /healthz, port: 8080 }
+            initialDelaySeconds: 10
+            periodSeconds: 10
+          resources:
+            requests: { cpu: 50m, memory: 64Mi }
+            limits: { cpu: 250m, memory: 128Mi }

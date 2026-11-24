@@ -1,0 +1,25 @@
+# ArgoCD Application: 이 저장소(main 브랜치)를 감시하다가 변경되면 클러스터에 자동 반영한다.
+# 최초 1회만 수동 적용:  kubectl apply -f argocd/application.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: k8s-demo-app
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/parkSujinSeoul/k8s-demo-manifests-202611.git
+    targetRevision: main
+    path: .
+    directory:
+      recurse: true            # istio/ 하위 폴더까지 포함
+      exclude: 'argocd/*'      # 이 Application 파일 자신은 제외
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: demo
+  syncPolicy:
+    automated:
+      prune: true              # Git에서 지운 리소스는 클러스터에서도 삭제
+      selfHeal: true           # 클러스터에서 수동 변경하면 Git 상태로 되돌림
+    syncOptions:
+      - CreateNamespace=true

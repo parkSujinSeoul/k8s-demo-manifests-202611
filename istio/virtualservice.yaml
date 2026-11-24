@@ -1,0 +1,49 @@
+# 라우팅 규칙 (위에서부터 순서대로 매칭)
+#   1) 헤더 x-version: v2      → v2
+#   2) 경로 /v2                → /v2/ 로 리다이렉트 (React 자산을 상대 경로로 받기 위해 끝에 / 필요)
+#   3) 경로 /v2/ 로 시작       → v2 (앱에는 / 로 바꿔서 전달: /v2/api/info → /api/info)
+#   4) 그 외                   → v1
+apiVersion: networking.istio.io/v1
+kind: VirtualService
+metadata:
+  name: demo-app
+  namespace: demo
+spec:
+  hosts:
+    - app.lab02.local
+  gateways:
+    - demo-gateway
+  http:
+    - name: header-v2
+      match:
+        - headers:
+            x-version:
+              exact: v2
+      route:
+        - destination:
+            host: demo-app
+            subset: v2
+            port: { number: 80 }
+    - name: path-v2-redirect
+      match:
+        - uri:
+            exact: /v2
+      redirect:
+        uri: /v2/
+    - name: path-v2
+      match:
+        - uri:
+            prefix: /v2/
+      rewrite:
+        uri: /
+      route:
+        - destination:
+            host: demo-app
+            subset: v2
+            port: { number: 80 }
+    - name: default-v1
+      route:
+        - destination:
+            host: demo-app
+            subset: v1
+            port: { number: 80 }
