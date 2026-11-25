@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
         - name: demo-app
-          image: docker.io/sjpark6468/k8s-demo-app:3-8f5656d
+          image: docker.io/sjpark6468/k8s-demo-app:4-6329fcf
           ports:
             - name: http
               containerPort: 8080
@@ -64,7 +64,7 @@ spec:
     spec:
       containers:
         - name: demo-app
-          image: docker.io/sjpark6468/k8s-demo-app:3-8f5656d
+          image: docker.io/sjpark6468/k8s-demo-app:4-6329fcf
           ports:
             - name: http
               containerPort: 8080
