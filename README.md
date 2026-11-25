@@ -30,7 +30,7 @@ k8s-demo-manifests-202611/
 Istio(Gateway 등 CRD)와 ArgoCD가 먼저 설치되어 있어야 합니다.
 
 ```bash
-# 0) deployment.yaml의 YOUR_DOCKERHUB_ID 변경 후 push (최초 1회)
+# 0) Docker Hub에 sjpark6468/k8s-demo-app:v1 이미지가 먼저 올라가 있어야 함 (app-repo README 참고)
 
 # 1) 수동 확인용 (ArgoCD 전)
 kubectl apply -f namespace.yaml
